@@ -1,0 +1,100 @@
+pipeline {
+	agent {
+		label {
+			label 'master'
+		}
+	}
+	
+// ******INSTALLATION PROCESS IN MASTER***********
+	
+	stages('Automation') {
+		stage('cleaning artifactory .m2') {
+			steps {
+				sh 'rm -rf /root/.m2/repository/'
+			}
+		}
+		stage('installing java') {
+			steps {
+				sh 'sudo yum install java-1.8.0-openjdk-devel.x86_64 -y'
+			}
+		}
+		stage('installing git') {
+			steps {
+				sh 'sudo yum install git -y'
+			}
+		}
+		stage('installing maven') {
+			steps {
+				sh 'sudo yum install maven -y'
+			}
+		}
+		stage('Cloning Git repo') {
+			steps {
+				dir('server/git'){
+					sh 'rm -rf *'
+					sh 'git clone https://github.com/ManieshDave/game-of-life.git'
+				}
+			}
+		}
+		stage('mvn Build Project') {
+			steps {
+				dir('server/git/game-of-life') {
+					sh 'mvn clean package'
+				}	
+			}
+		}
+				
+// ******INATSTALLATION PROCESS IN SLAVE-1(jnlp)***************
+				
+		stage('Installing Tomcat in Slave1') {
+			agent {
+				node {
+					label 'slave-1'
+				}
+			}
+			steps {
+				dir('/server/git/') {
+					sh 'rm -rf *'
+					sh 'wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.70/bin/apache-tomcat-9.0.70.zip'
+					sh 'unzip apache-tomcat-9.0.70.zip'
+				}
+			}
+		}	
+		stage('Starting Tomcat in SLAVE-1***********') {
+			agent {
+				node {
+					label 'slave-1'
+				}
+			}	
+			steps {
+				dir('/server/git/apache-tomcat-9.0.70/bin') {
+					sh 'chmod 755 startup.sh'
+					sh 'chmod 755 catalina.sh'
+					sh './startup.sh'
+				}
+			}
+		}
+		stage('Artifect stored in s3(on Master)') {
+			steps {
+				dir('/root/.jenkins/workspace/test/server/git/game-of-life/gameoflife-web/target') {
+					sh 'aws s3 cp ./gameoflife.war s3://saitema'
+				}
+			}	
+		}
+		
+//***********DEPLOYING WAR IN SLAVE-1***********
+
+		stage('Deploying war file in slave-1') {
+			agent {
+				node {
+					label 'slave-1'
+				}
+			}
+			steps {
+				dir('/server/git/apache-tomcat-9.0.70/webapps/') {
+					sh 'aws s3 cp s3://saitema/gameoflife.war .'
+				}
+			}
+		}
+	}	
+}
