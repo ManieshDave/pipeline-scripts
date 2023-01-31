@@ -1,0 +1,24 @@
+pipeline {
+  agent any
+	stages {
+		stage(parallel) {
+			parallel {
+				stage('stage1') {
+					steps {
+						echo 'Hello world'
+					}
+				}	
+				stage('stage2') {
+					steps {
+						echo 'this is stage 2'
+					}
+				}
+				stage('stage3') {
+					steps {
+						echo 'nikal lavde'
+					}
+				}
+			}
+		}
+	}
+}

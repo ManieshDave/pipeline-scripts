@@ -1,0 +1,26 @@
+---
+- hosts: all
+  user: ansible
+    #become: yes
+  connection: ssh
+  gather_facts: yes
+  vars:
+    java: java-1.8.0-openjdk-devel.x86_64
+    tomcat: https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.71/bin/apache-tomcat-9.0.71.tar.gz
+    sample: https://tomcat.apache.org/tomcat-7.0-doc/appdev/sample/sample.war
+    path: /server/apache-tomcat-9.0.71/webapps
+  tasks:
+  - name: java installation
+    action: yum pkg="{{java}}" state=present
+  - name: tomcat installation
+    action: get_url url="{{tomcat}}" dest=/
+  - name: unzip tomcat
+    unarchive:
+      src: "/home/ansible/apache-tomcat-9.0.71.tar.gz"
+      dest: "/server/"
+      remote_src: yes
+  - name: getting sample war file
+    action: get_url url="{{sample}}" dest="{{path}}"
+  - name: starting tomcat
+    shell: "nohup ./server/apache-tomcat-9.0.71/bin/startup.sh"
+    become: true

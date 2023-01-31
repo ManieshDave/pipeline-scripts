@@ -1,0 +1,125 @@
+pipeline {
+	agent {
+		label {
+			label 'master'
+		}
+	}
+	
+// ******INSTALLATION PROCESS ON MASTER**********
+	
+	stages('Automation') {
+		stage('cleaning artifactory .m2') {
+			steps {
+				sh 'rm -rf /root/.m2/repository/'
+			}
+		}
+		stage('installing java') {
+			steps {
+				sh 'sudo yum install java-1.8.0-openjdk-devel.x86_64 -y'
+			}
+		}
+		stage('installing git') {
+			steps {
+				sh 'yum remove git -y'
+				sh 'sudo yum install git -y'
+			}
+		}
+		stage('installing maven') {
+			steps {
+				sh 'sudo yum install maven -y'
+			}
+		}
+		stage('Cloning Git repo') {
+			steps {
+				dir('/apla-project/git'){
+					sh 'rm -rf *'
+					sh 'git clone https://github.com/ManieshDave/game-of-life.git'
+				}
+			}
+		}
+		stage('mvn Build Project') {
+			steps {
+				dir('/apla-project/git/game-of-life') {
+					sh 'mvn clean package'
+				}	
+			}
+		}
+		stage('Docker Containerization on Master') {
+			steps {
+				dir('/compose/'){
+					sh 'yum install docker -y'
+					sh 'systemctl stop docker'
+					sh 'systemctl start docker'
+					sh 'systemctl enable docker'
+					sh 'docker system prune -a -f'
+					sh 'curl -L --fail https://github.com/docker/compose/releases/download/1.29.2/run.sh -o /usr/local/bin/docker-compose'
+					sh 'sudo chmod +x /usr/local/bin/docker-compose'
+					sh 'docker-compose up -d'
+				}
+			}		
+        }
+		stage ('key generation') {
+			steps {
+				dir ('/root/.ssh/') {
+					sh 'rm -rf id_rsa id_rsa.pub'
+					sh 'ssh-keygen -t rsa -b 4096 -C "manieshdave@gmail.com" -f id_rsa -P "" -N ""'
+				}
+			}
+		}
+		stage('Git push repo') {
+			steps {
+				dir('/compose/'){
+				    sh 'rm -rf .git'
+					sh 'git init'
+					sh 'git remote add origin git@github.com:ManieshDave/docker-compose.git'
+					sh 'git add docker-compose.yml'
+					sh 'git commit docker-compose.yml -m "Docker compose file"'
+					sh 'echo "You have one minute to add this key in your GIT"'
+					sh 'cat /root/.ssh/id_rsa.pub'
+				}	
+			}
+		}
+		stage ('to sleep') {
+			steps {
+				sleep 90
+			}
+		}
+
+//********* work on slave - 1************
+
+
+		stage('Pull Git [compose file]') {
+			agent {
+				node {
+					label 'slave-1'
+				}
+			}
+			steps {
+				dir('/server/') {
+					sh 'yum install git -y'
+					sh 'git init'
+					sh 'git pull https://github.com/ManieshDave/docker-compose.git'
+				}
+			}
+		}
+		stage('Docker compose on slave') {
+			agent {
+				node {
+					label 'slave-1'
+				}
+			}
+			steps {
+				dir('/server/'){
+					sh 'yum install docker -y'
+					sh 'systemctl stop docker'
+					sh 'systemctl start docker'
+					sh 'systemctl enable docker'
+					sh 'docker system prune -a -f'
+					sh 'curl -o --fail https://github.com/docker/compose/releases/download/1.29.2/run.sh -o /usr/local/bin/docker-compose'
+					sh 'chmod +x /usr/local/bin/docker-compose'
+					sh 'docker-compose up -d'
+				}
+			}
+		}
+	}	
+}

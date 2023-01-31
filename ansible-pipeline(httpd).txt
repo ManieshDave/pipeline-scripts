@@ -1,0 +1,49 @@
+pipeline {
+	agent {
+		node {
+			label 'master'
+		}
+	}
+	stages ('auto ansible') {
+		stage ('Git Clone Dev') {
+			steps {
+				dir ('/home/ansible/') {
+					sh 'yum install git -y'
+					sh 'rm -rf *'
+					sh '''
+					su - ansible -c 'git clone https://github.com/ManieshDave/index-html-Dev.git'
+					'''
+				}
+			}
+		}
+		stage ('Git Clone QA') {
+			steps {
+				dir ('/home/ansible/') {
+					sh '''
+					su - ansible -c 'git clone https://github.com/ManieshDave/index-for-QA.git'
+					'''
+				}
+			}
+		}
+		stage ('Deploying on Dev env') {
+			steps {
+				dir ('/home/ansible/index-html-Dev/'){
+					sh '''
+					su - ansible -c 'ansible all -b -m yum -a "pkg=httpd state=present"'
+					su - ansible -c 'ansible dev -b -m copy -a "src=/home/ansible/index-html-Dev/index.html dest=/var/www/html/"'
+					'''
+				}
+			}
+		}
+		stage ('Deploying on QA env') {
+			steps {
+				dir ('/home/ansible/index-for-QA/'){
+					sh '''
+					su - ansible -c 'ansible qa -b -m copy -a "src=/home/ansible/index-for-QA/index.html dest=/var/www/html/"'
+					su - ansible -c 'ansible all -b -m service -a "name=httpd state=started"'
+					'''
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,89 @@
+pipeline {
+	agent {
+		label {
+			label 'master'
+		}
+	}
+	
+// ******INSTALLATION PROCESS ON MASTER**********
+	
+	stages('Automation') {
+		stage('cleaning artifactory .m2') {
+			steps {
+				sh 'rm -rf /root/.m2/repository/'
+			}
+		}
+		stage('installing java') {
+			steps {
+				sh 'sudo yum install java-1.8.0-openjdk-devel.x86_64 -y'
+			}
+		}
+		stage('installing git') {
+			steps {
+				sh 'sudo yum install git -y'
+			}
+		}
+		stage('installing maven') {
+			steps {
+				sh 'sudo yum install maven -y'
+			}
+		}
+		stage('Cloning Git repo') {
+			steps {
+				dir('server/git'){
+					sh 'rm -rf *'
+					sh 'git clone https://github.com/ManieshDave/game-of-life.git'
+				}
+			}
+		}
+		stage('mvn Build Project') {
+			steps {
+				dir('server/git/game-of-life') {
+					sh 'mvn clean package'
+				}	
+			}
+		}
+				
+// ******INATSTALLATION PROCESS ON SLAVE-1(jnlp)***************
+				
+		
+		stage('Artifect stored in s3(on Master)') {
+			steps {
+				dir('/root/.jenkins/workspace/pipeline/server/git/game-of-life/gameoflife-web/target') {
+					sh 'aws s3 cp ./gameoflife.war s3://saitema'
+				}
+			}	
+		}
+		
+//***********DEPLOYING WAR IN SLAVE-1***********
+
+		stage('Deploying war file on slave-1') {
+			agent {
+				node {
+					label 'slave-1'
+				}
+			}
+			steps {
+				dir('/app/warfile/') {
+					sh 'aws s3 cp s3://saitema/gameoflife.war .'
+				}
+			}
+		}
+		stage('Docker Containerization') {
+			agent {
+				node {
+					label 'slave-1'
+				}
+			}
+			steps {
+				sh 'yum install docker -y'
+				sh 'systemctl stop docker'
+				sh 'systemctl start docker'
+				sh 'systemctl enable docker'
+				sh 'docker system prune -a -f'
+				sh 'docker pull tomcat:8'
+				sh 'docker run -d -p 8080:8080 -v /app/warfile/:/usr/local/tomcat/webapps tomcat:8'
+			}
+		}
+	}	
+}

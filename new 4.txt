@@ -1,0 +1,35 @@
+pipeline {
+	agent {
+		label {
+			label 'slave-1'
+		}
+	}
+	stages('Automation') {
+		stage('installing git') {
+			steps {
+				sh 'yum remove git -y'
+				sh 'sudo yum install git -y'
+			}
+		}
+		stage ('key generation') {
+			steps {
+				dir ('/root/.ssh/') {
+					sh 'ssh-keygen -t rsa -b 4096 -C "manieshdave@gmail.com" -f id_rsa -P "" -N ""'
+				}
+			}
+		}
+		stage('Git push repo') {
+			steps {
+				dir('/compose/'){
+				    sh 'rm -rf .git'
+					sh 'git init'
+					sh 'git remote add origin git@github.com:ManieshDave/docker-compose.git'
+					sh 'git add docker-compose.yml'
+					sh 'git commit docker-compose.yml -m "Docker compose file"'
+					sh 'cat /root/.ssh/id_rsa.pub'
+					sh 'echo "You have one minute to add this key in your GIT"'
+				}	
+			}
+		}
+	}
+}

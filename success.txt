@@ -1,0 +1,98 @@
+pipeline {
+	agent {
+		label {
+			label 'master'
+		}
+	}
+	
+// ******INSTALLATION PROCESS*******
+	
+	stages('Automation') {
+		stage('cleaning artifactory .m2') {
+			steps {
+				sh 'rm -rf /root/.m2/repository/'
+			}
+		}
+		stage('install java') {
+			steps {
+				sh 'sudo yum install java-1.8.0-openjdk-devel.x86_64 -y'
+			}
+		}
+		stage('installing git') {
+			steps {
+				sh 'sudo yum install git -y'
+			}
+		}
+		stage('installing maven') {
+			steps {
+				sh 'sudo yum install maven -y'
+			}
+		}
+		stage('Git clone') {
+			steps {
+				dir('server/git'){
+					sh 'rm -rf *'
+					sh 'git clone https://github.com/ManieshDave/game-of-life.git'
+				}
+			}
+		}
+		stage('mvn Build') {
+			steps {
+				dir('server/git/game-of-life') {
+					sh 'mvn clean package'
+				}	
+			}
+		}
+				
+// ******INATSTALLATION PROCESS IN jnlp1*******
+				
+		stage('slave-1') {
+			agent {
+				node {
+					label 'slave-1'
+				}
+			}
+			steps {
+				dir('/server/git/') {
+					sh 'rm -rf *'
+					sh 'wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.70/bin/apache-tomcat-9.0.70.zip'
+					sh 'unzip apache-tomcat-9.0.70.zip'
+				}
+			}
+		}	
+		stage('slave-1 install') {
+			agent {
+				node {
+					label 'slave-1'
+				}
+			}	
+			steps {
+				dir('/server/git/apache-tomcat-9.0.70/bin') {
+					sh 'chmod 755 startup.sh'
+					sh 'chmod 755 catalina.sh'
+					sh './startup.sh'
+				}
+			}
+		}
+		stage('deploying in s3') {
+			steps {
+			    s3CopyArtifact buildSelector: permalink(''), excludeFilter: '', filter: 'gameoflife.war', flatten: false, optional: false, projectName: 'pipeline', target: '/root/.jenkins/workspace/pipeline/server/git/game-of-life/gameoflife-web/targe/'
+			}
+		}
+		
+//***********DEPLOYING WAR IN SLAVE-2***********
+
+		stage('deploying in slave-2') {
+			agent {
+				node {
+					label 'slave-1'
+				}
+			}
+			steps {
+				dir('/server/git/apache-tomcat-9.0.70/webapps/') {
+					sh 'aws s3 cp s3://saitema/gameoflife.war .'
+				}
+			}
+		}	
+	}		
+}

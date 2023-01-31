@@ -1,0 +1,70 @@
+pipeline {
+	agent {
+		node {
+			label 'master'
+		}
+	}
+	stages ('auto ansible') {
+		stage ('Installing Ansible') {
+			steps {
+				dir ('/') {
+					sh 'wget -r https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm'
+					sh 'yum install epel-release-latest-7.noarch.rpm -y'
+					sh 'yum install ansible -y'
+			    }
+			}
+		}
+		stage ('Configuring Ansible Server') {
+			steps {
+				dir ('/etc/ssh/') {
+					sh "sed -i '38s/#//g;61s/#//g' sshd_config"
+					sh 'sed -i '63s/^/&#/' sshd_config'
+				}
+			}
+		}
+		stage ('Coping ssh keys to Hosts') {
+			steps {
+				dir ('.ssh/') {
+					sh 'ssh-keygen -t rsa -b 4096 -f id_rsa -P "" -N ""'
+				}
+			}
+		}
+		agent {
+			node {
+				label 'slave-1'
+			}
+		}
+		stage ('Configuring Ansible Server') {
+			steps {
+				dir ('/etc/ssh/') {
+					sh "sed -i '38s/#//g;61s/#//g' sshd_config"
+					sh 'sed -i '63s/^/&#/' sshd_config'
+				}
+			}
+		}
+		stage ('Good Night') {
+			steps {
+				sleep time: 2, unit: 'MINUTES'
+			}
+		}
+		stage ('Git Clone Dev') {
+			steps {
+				dir ('/git-dev/') {
+					sh 'git clone https://github.com/ManieshDave/index.html.git'
+				}
+			}
+		}
+		stage ('Git Clone QA') {
+			steps {
+				dir ('/git-QA/') {
+					sh 'git clone https://github.com/ManieshDave/index-for-QA.git'
+				}
+			}
+		}
+		stage ('Ansible Module for Dev') {
+			steps {
+				sh 'ansible '
+			}
+		}
+	}
+}

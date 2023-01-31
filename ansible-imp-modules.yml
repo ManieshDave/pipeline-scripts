@@ -1,0 +1,108 @@
+---
+- name: Example Playbook
+  hosts: all
+  gather_facts: yes
+  tasks:
+  - name: Install Apache2
+    apt:
+      name: apache2
+      state: present
+
+  - name: Ensure apache service is running
+    service:
+      name: apache2
+      state: started
+      enabled: yes
+
+  - name: Copy index.html to web root
+    copy:
+      src: index.html
+      dest: /var/www/html/
+
+  - name: Create a new user
+    user:
+      name: newuser
+      password: "$6$salt$hash"
+      state: present
+
+  - name: Add newuser to www-data group
+    group:
+      name: www-data
+      members: newuser
+      state: present
+
+  - name: Restart apache2 service
+    service:
+      name: apache2
+      state: restarted
+
+  - name: Add a cron job for newuser
+    cron:
+      name: "Job for newuser"
+      user: newuser
+      minute: "*/15"
+      job: "echo 'Running job for newuser' >> /tmp/job_for_newuser.log"
+
+  - name: Check connectivity to localhost
+    ping:
+
+  - name: Get system information
+    setup:
+
+  - name: Run a shell command
+    shell: echo "Hello, World!"
+
+  - name: Run a command on Windows hosts
+    win_command: echo "Hello, World!"
+
+  - name: Run a shell command on Windows hosts
+    win_shell: echo "Hello, World!"
+
+  - name: Execute a script
+    script: script.sh
+
+  - name: Execute a raw command
+    raw: echo "Hello, World!"
+
+  - name: Manage SysV init service
+    sysvinit:
+      name: apache2
+      state: restarted
+
+  - name: Add an apt key
+    apt_key:
+      url: http://example.com/example.asc
+      state: present
+
+  - name: Add an apt repository
+    apt_repository:
+      repo: "deb http://example.com/repo stable main"
+      state: present
+
+  - name: Add or remove a file
+    file:
+      path: /path/to/file
+      state: touch
+      owner: newuser
+      group: www-data
+      mode: 0664
+
+  - name: Debug output
+    debug:
+      msg: "This is a debug message"
+
+  - name: Clone a Git repository
+    git:
+      repo: https://github.com/user/repo.git
+      dest: /path/to/repo
+      version: master
+      clone: yes
+      update: yes
+
+  - name: Checkout a specific branch
+    git:
+      repo: https://github.com/user/repo.git
+      dest: /path/to/repo
+      version: develop
+      clone: no
+      update: yes

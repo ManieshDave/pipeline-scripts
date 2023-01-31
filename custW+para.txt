@@ -1,0 +1,29 @@
+pipeline {
+	agent {
+		node {
+		label 'slave-jnlp'
+		customWorkspace 'new/data'
+		}
+	}
+	stages('cmd') {
+		stage('parallel') {
+			parallel {
+				stage('cmd1') {
+					steps {
+						echo 'hello world'
+					}
+				}
+				stage('cmd2') {
+					steps {
+						echo 'dubai'
+					}
+				}
+				stage('cmd3') {
+					steps {
+						echo 'mia'
+					}
+				}
+			}
+		}	
+	}
+}

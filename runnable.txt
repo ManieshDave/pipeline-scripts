@@ -1,0 +1,61 @@
+pipeline {
+	agent {
+		label {
+			label 'master'
+		}
+	}
+	
+// ******INATSTALLATION PROCESS*******
+	
+	stages('Automation') {
+		stage('cleaning artifactory .m2') {
+			steps {
+				sh 'rm -rf /root/.m2/repository/'
+				}
+			}
+			stage('install java') {
+				steps {
+					sh 'sudo yum install java-1.8.0-openjdk-devel.x86_64 -y'
+				}
+			}
+			stage('installing git') {
+				steps {
+					sh 'sudo yum install git -y'
+				}
+			}
+			stage('installing maven') {
+				steps {
+					sh 'sudo yum install maven -y'
+				}
+			}
+			stage('Git clone') {
+				steps {
+					dir('server/git'){
+						sh 'rm -rf *'
+						sh 'git clone https://github.com/ManieshDave/game-of-life.git'
+					}
+				}
+			}
+			stage('mvn Build') {
+				steps {
+					dir('server/git/game-of-life') {
+						sh 'mvn clean package'
+					}	
+				}
+			}
+				
+// ******INATSTALLATION PROCESS IN jnlp2*******
+				
+			stage('slave-2') {
+				agent {
+					node {
+						label 'slave-2'
+					}
+				}
+				steps {
+					sh 'wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.70/bin/apache-tomcat-9.0.70.zip'
+					sh 'unzip -o apache-tomcat-9.0.70.zip'
+				}
+			}
+		}		
+	}

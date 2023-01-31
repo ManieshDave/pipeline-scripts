@@ -1,0 +1,25 @@
+pipeline {
+	agent {
+	 node {
+		label 'ssh-slave'
+		customWorkspace 'project/bin/bash'
+		}
+	}
+	stages('new') {
+		stage('live') {
+			steps {
+				echo "hello world"
+			}
+		}
+	    stage('2') {
+			steps {
+				sh 'mkdir dani'
+			}
+		}
+		stage('3') {
+			steps {
+				sh 'sudo yum install tree -y'
+			}
+		}
+	}
+}
