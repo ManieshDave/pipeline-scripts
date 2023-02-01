@@ -1,0 +1,29 @@
+version: '3.7'
+services:
+  service1:
+    image: <image_name>
+    networks:
+      bridge_network:
+        driver: bridge
+      host_network:
+        driver: host
+      overlay_network:
+        driver: overlay
+  service2:
+    image: <image_name>
+    networks:
+      macvlan_network:
+        driver: macvlan
+        driver_opts:
+          parent: eth0
+      none_network:
+        driver: none
+networks:
+  bridge_network:
+  host_network:
+  overlay_network:
+    external: true
+  macvlan_network:
+    driver: macvlan
+  none_network:
+
