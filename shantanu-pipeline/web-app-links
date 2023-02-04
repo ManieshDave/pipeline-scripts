@@ -1,0 +1,30 @@
+............................................
+
+   sudo yum install -y yum-utils
+   sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+   sudo yum -y install terraform
+   terraform -v
+
+............................................
+
+https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+yum install epel-release-latest-7.noarch.rpm
+yum install ansible
+ansible ALL=(ALL)       NOPASSWD: ALL
+
+............................................
+
+https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.71/bin/apache-tomcat-9.0.71.zip
+
+............................................
+
+https://updates.jenkins.io/download/war/2.375.1/jenkins.war
+
+https://updates.jenkins.io/download/war/2.332.2/jenkins.war
+
+...........................................
+
+https://dlcdn.apache.org/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz
+
+
+

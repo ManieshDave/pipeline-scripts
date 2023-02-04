@@ -1,0 +1,40 @@
+pipeline {
+
+	agent {
+					label {
+						
+							label "qa-env"
+							customWorkspace "/mnt/project"
+						
+					}
+	}
+	
+	environment {
+						
+						composeurl = "https://github.com/Shantanumajan6/velocity-devops-project.git"
+						composedirname = "velocity-devops-project"
+		}
+	
+	stages {
+		
+			stage ("CLONE-DOCKERC-FILE"){
+			
+				steps {     
+				            sh "rm -rf *"
+							sh "git clone ${composeurl}"
+				}
+			
+			}
+			
+			stage ("RUN_COMPOSE"){
+			
+				steps {
+				
+							sh "cd ${composedirname} && sudo docker-compose up -d"
+				}
+			
+			}
+	
+	}
+
+}

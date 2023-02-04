@@ -1,0 +1,50 @@
+pipeline {
+
+	agent {
+					label {
+						
+							label "dev-env"
+							customWorkspace "/mnt/project"
+						
+					}
+	}
+	
+	environment {
+						
+						composedirname = "velocity-devops-project"
+		}
+	
+	stages {
+		
+				
+			stage ("SHUTDOWN-DEV-env"){
+			
+		
+			
+				steps {
+				
+							sh "cd ${composedirname} && sudo docker-compose down -v"
+							sh "sudo docker system prune -a -f"
+				}
+			
+			}
+	
+			stage ("SHUTDOWN-QA-env"){
+			
+				agent {
+							label {
+										label "qa-env"
+										customWorkspace "/mnt/project"
+							}
+				}
+			
+			
+				steps {
+				
+							sh "cd ${composedirname} && sudo docker-compose down -v"
+							sh "sudo docker system prune -a -f"
+				}
+			
+			}
+	}
+}

@@ -1,0 +1,41 @@
+pipeline {
+
+	agent {
+				label {
+					
+						label "built-in"
+						customWorkspace "/mnt/wars"
+				
+				}
+	}
+	
+	environment {
+						
+						devip = "10.10.1.248"
+						qaip = "10.10.2.236"
+		
+		}
+	
+	stages {
+	
+				stage ("COPY_DEV_WAR") {
+				
+					steps {
+								sh "scp -r gameoflife.war velocity@${devip}:/mnt/wars"
+					}
+				
+				}
+				
+				stage ("COPY_QA_WAR") {
+				
+					steps {
+								sh "scp -r gameoflife.war velocity@${qaip}:/mnt/wars"
+					}
+				
+				}
+		
+		
+		
+	}
+
+}
